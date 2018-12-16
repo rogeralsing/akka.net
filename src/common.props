@@ -10,7 +10,11 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.3.1</XunitVersion>
-    <TestSdkVersion>15.7.2</TestSdkVersion>
+    <TestSdkVersion>15.9.0</TestSdkVersion>
+    <NetCoreTestVersion>netcoreapp1.1</NetCoreTestVersion>
+    <NetFrameworkTestVersion>net461</NetFrameworkTestVersion>
+    <NetStandardLibVersion>netstandard1.6</NetStandardLibVersion>
+    <NetFrameworkLibVersion>net45</NetFrameworkLibVersion>
     <AkkaPackageTags>akka;actors;actor model;Akka;concurrency</AkkaPackageTags>
   </PropertyGroup>
   <PropertyGroup>
