@@ -56,6 +56,7 @@ let incrementalistReport = output @@ "incrementalist.txt"
 let testNetFrameworkVersion = "net471"
 let testNetCoreVersion = "netcoreapp3.1"
 let testNetVersion = "net5.0"
+let mntrRuntime = getBuildParamOrDefault "runtime" "win10-x64"
 
 Target "Clean" (fun _ ->
     ActivateFinalTarget "KillCreatedProcesses"
@@ -347,14 +348,20 @@ Target "MultiNodeTests" (fun _ ->
 )
 
 Target "MultiNodeTestsNetCore" (fun _ ->
+    
+    let dDir = (currentDirectory @@ "src" @@ "core" @@ "Akka.MultiNodeTestRunner" @@ "bin" @@ "Release" @@ testNetCoreVersion @@ mntrRuntime @@ "publish")
+    
     if not skipBuild.Value then
-        let multiNodeTestPath = findToolInSubPath "Akka.MultiNodeTestRunner.dll" (currentDirectory @@ "src" @@ "core" @@ "Akka.MultiNodeTestRunner" @@ "bin" @@ "Release" @@ testNetCoreVersion @@ "win10-x64" @@ "publish")
+        let multiNodeTestPath = findToolInSubPath "Akka.MultiNodeTestRunner.dll" dDir
 
-        let projects =
-            let rawProjects = match (isWindows) with
-                                | true -> !! "./src/**/*.Tests.MultiNode.csproj"
-                                | _ -> !! "./src/**/*.Tests.MulitNode.csproj" // if you need to filter specs for Linux vs. Windows, do it here
-            rawProjects |> Seq.choose filterProjects
+        let rawProjects = filesInDirMatchingRecursive "*.Tests.MultiNode.csproj"  (directoryInfo (currentDirectory @@ "src/")) 
+                          |> Array.toList 
+                          |> List.map (fun (path) -> path.FullName)
+                                //match (isWindows) with
+                                //| true -> !! "./src/**/*.Tests.MultiNode.csproj"
+                                //| _ ->  !! (currentDirectory @@ "src" @@ "**" @@ "*.Tests.MulitNode.csproj") //"./src/**/*.Tests.MulitNode.csproj" if you need to filter specs for Linux vs. Windows, do it here
+        
+        let projects = rawProjects |> Seq.choose filterProjects
 
         let multiNodeTestAssemblies =
             projects |> Seq.choose (getTestAssembly Runtime.NetCore)
@@ -387,14 +394,20 @@ Target "MultiNodeTestsNetCore" (fun _ ->
         multiNodeTestAssemblies |> Seq.iter (runMultiNodeSpec)
 )
 Target "MultiNodeTestsNet" (fun _ ->
-    if not skipBuild.Value then
-        let multiNodeTestPath = findToolInSubPath "Akka.MultiNodeTestRunner.dll" (currentDirectory @@ "src" @@ "core" @@ "Akka.MultiNodeTestRunner" @@ "bin" @@ "Release" @@ testNetVersion @@ "win10-x64" @@ "publish")
+    
+    let dDir = (currentDirectory @@ "src" @@ "core" @@ "Akka.MultiNodeTestRunner" @@ "bin" @@ "Release" @@ testNetVersion @@ mntrRuntime @@ "publish")
 
-        let projects =
-            let rawProjects = match (isWindows) with
-                                | true -> !! "./src/**/*.Tests.MultiNode.csproj"
-                                | _ -> !! "./src/**/*.Tests.MulitNode.csproj" // if you need to filter specs for Linux vs. Windows, do it here
-            rawProjects |> Seq.choose filterProjects
+    if not skipBuild.Value then
+        let multiNodeTestPath = findToolInSubPath "Akka.MultiNodeTestRunner.dll" dDir
+
+        let rawProjects = filesInDirMatchingRecursive "*.Tests.MultiNode.csproj"  (directoryInfo (currentDirectory @@ "src/")) 
+                          |> Array.toList 
+                          |> List.map (fun (path) -> path.FullName) 
+                                //match (isWindows) with
+                                //| true -> !! "./src/**/*.Tests.MultiNode.csproj"
+                                //| _ -> !! "./src/**/*.Tests.MulitNode.csproj" if you need to filter specs for Linux vs. Windows, do it here
+        
+        let projects = rawProjects |> Seq.choose filterProjects
 
         let multiNodeTestAssemblies =
             projects |> Seq.choose (getTestAssembly Runtime.Net)
@@ -519,7 +532,7 @@ Target "PublishMntr" (fun _ ->
                     { p with
                         Project = project
                         Configuration = configuration
-                        Runtime = "win10-x64"
+                        Runtime = mntrRuntime
                         Framework = testNetVersion
                         VersionSuffix = versionSuffix }))
 
@@ -530,9 +543,10 @@ Target "PublishMntr" (fun _ ->
                     { p with
                         Project = project
                         Configuration = configuration
-                        Runtime = "win10-x64"
+                        Runtime = mntrRuntime
                         Framework = testNetCoreVersion
                         VersionSuffix = versionSuffix }))
+
 )
 
 Target "CreateMntrNuget" (fun _ ->
