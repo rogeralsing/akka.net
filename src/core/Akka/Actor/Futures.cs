@@ -125,7 +125,12 @@ namespace Akka.Actor
             if (provider == null)
                 throw new ArgumentException("Unable to resolve the target Provider", nameof(self));
 
-            return (T)await Ask(self, messageFactory, provider, timeout, cancellationToken);
+
+            var result = await Ask(self, messageFactory, provider, timeout, cancellationToken);
+            if (result is T t)
+                return t;
+
+            throw new InvalidAskResponseException($"Expected message of type [{typeof(T)}] but received [{result}]", result);
         }
 
         /// <summary>
